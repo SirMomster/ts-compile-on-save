@@ -21,7 +21,17 @@
 				"command": "extension.build",
 				"title": "Typescript build for current file"
 			}
-		]
+		],
+		"configuration": {
+			"title": "TSCompileOnSave",
+			"properties": {
+				"tsCompileOnSave.enabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Disable or enable compile on save"
+				}
+			}
+		}
 	},
 	"scripts": {
 		"compile": "tsc -p ./",
@@ -35,6 +45,7 @@
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.1",
+		"@types/lodash": "^4.14.149",
 		"@types/mocha": "^5.2.7",
 		"@types/node": "^12.11.7",
 		"@types/vscode": "^1.40.0",
@@ -46,5 +57,10 @@
 		"vscode-test": "^1.2.2",
 		"webpack": "^4.41.2",
 		"webpack-cli": "^3.3.10"
+	},
+	"dependencies": {
+		"lodash": "^4.17.15",
+		"vscode-languageserver": "^5.2.1",
+		"vscode-uri": "^2.1.1"
 	}
 }
