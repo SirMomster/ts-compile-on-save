@@ -8,7 +8,7 @@ import {
 	sep,
 } from 'path';
 import {
-	spawn,
+	spawn, ChildProcess,
 } from 'child_process';
 
 
@@ -35,6 +35,7 @@ type diagEntryType = {
 };
 
 const configuration = vscode.workspace.getConfiguration('tsCompileOnSave');
+let process: ChildProcess | null = null;
 
 
 async function checkRecursive(path: string[], document: vscode.TextDocument): Promise < {
@@ -70,6 +71,8 @@ async function checkRecursive(path: string[], document: vscode.TextDocument): Pr
 			const command = spawn('tsc', {
 				cwd: cpath,
 			});
+
+			process = command;
 
 			command.stdout.on('data', function (data: Buffer) {
 				output.push(data.toString());
@@ -112,12 +115,11 @@ async function checkRecursive(path: string[], document: vscode.TextDocument): Pr
 async function build(fullFilePath: string, document: vscode.TextDocument, collection: vscode.DiagnosticCollection) {
 	const path = fullFilePath.split(sep);
 
-	if (flags.busy) {
-		return vscode.window.showWarningMessage('Saved to quickly, the previous build is still running!');
+	if (process) {
+		process.kill("SIGKILL");
 	}
 
 	try {
-		flags.busy = true;
 		const {
 			result,
 			diagnostics
@@ -141,7 +143,7 @@ async function build(fullFilePath: string, document: vscode.TextDocument, collec
 		console.log(ex);
 		vscode.window.showErrorMessage('Failed to build');
 	} finally {
-		flags.busy = false;
+		process = null;
 	}
 }
 
@@ -179,7 +181,7 @@ function createDiagnostic(logMessage: string, tscError: BUILD_RESULT): diagEntry
 	const file = value[1];
 
 	const nStart = parseInt(value[2]);
-	const nEnd = parseInt(value[3]);
+	const nEnd = parseInt(value[3]); 
 
 	let diagnostic: vscode.Diagnostic | undefined;
 	switch (tscError) {
