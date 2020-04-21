@@ -11,6 +11,7 @@ enum BUILD_RESULT {
 }
 
 import { groupBy, omit, mapValues } from "lodash";
+import GlobToRegExp = require("glob-to-regexp");
 
 type diagEntryType = {
     file: string;
@@ -18,6 +19,8 @@ type diagEntryType = {
 };
 
 const configuration = vscode.workspace.getConfiguration("tsCompileOnSave");
+const BASE_PATH = vscode.workspace.rootPath;
+
 let process: {
 	[k: string]: ChildProcess | null;
 } = {};
@@ -265,6 +268,10 @@ function updateDiagnostics(
     }
 }
 
+function matchesAPrefix (path: string, prefixes: string[]) {
+    return prefixes.some(v => GlobToRegExp(v).test(path));
+}
+
 export function activate(context: vscode.ExtensionContext) {
     const collection = vscode.languages.createDiagnosticCollection("test");
 
@@ -282,14 +289,31 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     vscode.workspace.onDidSaveTextDocument((e: vscode.TextDocument) => {
-        if (!configuration.get("enabled")) {
+        const enabled = configuration.get<boolean>("enabled");
+        console.log("enabled: ", enabled)
+        if (!enabled) {
             return;
         }
+
+        if (!BASE_PATH) {
+            console.log("no base_path");
+            return;
+        }
+        
         if (!e.fileName.endsWith(".ts")) {
             return;
-		}
-		
-		console.log(process);
+        }
+
+        const prefixes = configuration.get<string[]>("prefixes");
+        console.log("prefixes: ", prefixes);
+        const relativePath = e.fileName.replace(BASE_PATH + "/", "");
+        console.log(relativePath);
+        if (!prefixes || !matchesAPrefix(relativePath, prefixes)) {
+            return;
+        }
+
+
+
 
         build(e.fileName, e, collection);
     });
